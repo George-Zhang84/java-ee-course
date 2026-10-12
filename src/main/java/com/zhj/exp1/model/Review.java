@@ -90,6 +90,6 @@ public class Review {
     @Override
     public String toString() {
         return String.format("评价[%s] %d星 %s (%s)",
-                orderId, rating, content, createTime);
+                orderId, rating, content, createTime.toLocalDate());
     }
 }

@@ -6,7 +6,6 @@ import com.zhj.exp1.model.Product;
 import com.zhj.exp1.model.Review;
 import com.zhj.exp1.model.User;
 import com.zhj.exp1.model.enums.Category;
-import com.zhj.exp1.model.enums.OrderStatus;
 import com.zhj.exp1.service.OrderService;
 import com.zhj.exp1.service.ProductService;
 import com.zhj.exp1.service.ReviewService;
@@ -55,9 +54,6 @@ public class BuyerMenu extends BaseMenu {
         }
     }
 
-    /**
-     * 浏览在售商品（可选排序，分页显示）
-     */
     private void browseWithSort() {
         ConsoleUtil.printSubTitle("浏览商品 - 请选择排序方式");
         printOptions("按发布时间（最新）", "按价格从低到高", "按价格从高到低", "按热度（浏览量）", "默认顺序");
@@ -103,7 +99,7 @@ public class BuyerMenu extends BaseMenu {
     }
 
     /**
-     * 分页展示商品列表，允许翻页和查看详情
+     * 分页展示商品列表
      */
     private void showPaginatedProducts(List<Product> products) {
         if (products.isEmpty()) {
@@ -113,22 +109,25 @@ public class BuyerMenu extends BaseMenu {
         }
 
         int page = 1;
-        int pageSize = 5;   // 命令行显示，一页5条更清晰
+        int pageSize = 5;
+        int[] widths = {8, 12, 24, 12, 10};   // 每列显示宽度
 
         while (true) {
             ProductService.PageResult<Product> result = productService.paginate(products, page, pageSize);
             ConsoleUtil.printSubTitle("商品列表 - 第 " + result.currentPage + "/" + result.totalPages
                     + " 页（共 " + result.total + " 条）");
-            System.out.printf("  %-6s %-8s %-22s %-8s %-8s%n", "ID", "分类", "名称", "价格", "状态");
+            ConsoleUtil.printRow(widths, "ID", "分类", "名称", "价格", "状态");
             ConsoleUtil.printLine();
             for (Product p : result.data) {
-                System.out.printf("  %-6s %-8s %-22s ￥%-7.2f %-8s%n",
-                        p.getId(), p.getCategory(), truncate(p.getName(), 20),
-                        p.getPrice(), p.getStatus());
+                ConsoleUtil.printRow(widths,
+                        p.getId(),
+                        p.getCategory().toString(),
+                        truncate(p.getName(), 20),
+                        String.format("￥%.2f", p.getPrice()),
+                        p.getStatus().toString());
             }
             ConsoleUtil.printLine();
 
-            // 翻页菜单
             StringBuilder sb = new StringBuilder();
             if (result.hasPrev()) sb.append("[p]上一页 ");
             if (result.hasNext()) sb.append("[n]下一页 ");
@@ -180,6 +179,7 @@ public class BuyerMenu extends BaseMenu {
     }
 
     private void myOrders() {
+        int[] widths = {10, 24, 12, 14};
         while (true) {
             ConsoleUtil.printSubTitle("我的订单");
             List<Order> orders = orderService.listOrdersByBuyer(currentUser.getId());
@@ -188,12 +188,16 @@ public class BuyerMenu extends BaseMenu {
                 InputUtil.pause();
                 return;
             }
-            System.out.printf("  %-6s %-6s %-10s %-20s%n", "订单ID", "商品ID", "状态", "下单时间");
+            ConsoleUtil.printRow(widths, "订单ID", "商品名称", "状态", "下单时间");
             ConsoleUtil.printLine();
             for (Order o : orders) {
-                System.out.printf("  %-6s %-6s %-10s %-20s%n",
-                        o.getId(), o.getProductId(), o.getStatus(),
-                        o.getCreateTime().toLocalDate());
+                Product p = productService.getProductById(o.getProductId());
+                String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
+                ConsoleUtil.printRow(widths,
+                        o.getId(),
+                        pName,
+                        o.getStatus().toString(),
+                        o.getCreateTime().toLocalDate().toString());
             }
             ConsoleUtil.printLine();
             printOptions("取消订单", "确认收货", "评价订单", "返回");
@@ -246,9 +250,6 @@ public class BuyerMenu extends BaseMenu {
         InputUtil.pause();
     }
 
-    /**
-     * 截断过长字符串，保持表格整齐
-     */
     private String truncate(String s, int len) {
         return s.length() > len ? s.substring(0, len - 2) + ".." : s;
     }

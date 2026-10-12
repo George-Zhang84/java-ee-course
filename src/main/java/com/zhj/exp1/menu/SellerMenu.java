@@ -6,10 +6,10 @@ import com.zhj.exp1.model.Review;
 import com.zhj.exp1.model.Seller;
 import com.zhj.exp1.model.User;
 import com.zhj.exp1.model.enums.Category;
-import com.zhj.exp1.model.enums.OrderStatus;
 import com.zhj.exp1.service.OrderService;
 import com.zhj.exp1.service.ProductService;
 import com.zhj.exp1.service.ReviewService;
+import com.zhj.exp1.service.UserService;
 import com.zhj.exp1.util.ConsoleUtil;
 import com.zhj.exp1.util.InputUtil;
 
@@ -23,6 +23,7 @@ public class SellerMenu extends BaseMenu {
     private final ProductService productService = new ProductService();
     private final OrderService orderService = new OrderService();
     private final ReviewService reviewService = new ReviewService();
+    private final UserService userService = new UserService();
 
     public SellerMenu(User user) {
         super(user);
@@ -62,7 +63,6 @@ public class SellerMenu extends BaseMenu {
         String desc = InputUtil.readString("商品描述：");
         double price = InputUtil.readDouble("商品价格：");
 
-        // 选择分类
         Category[] categories = Category.values();
         for (int i = 0; i < categories.length; i++) {
             System.out.printf("  [%d] %s%n", i + 1, categories[i]);
@@ -86,11 +86,15 @@ public class SellerMenu extends BaseMenu {
             return;
         }
 
-        System.out.printf("  %-6s %-22s %-10s %-8s%n", "ID", "名称", "价格", "状态");
+        int[] widths = {8, 24, 14, 12};
+        ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态");
         ConsoleUtil.printLine();
         for (Product p : products) {
-            System.out.printf("  %-6s %-22s ￥%-9.2f %-8s%n",
-                    p.getId(), truncate(p.getName(), 20), p.getPrice(), p.getStatus());
+            ConsoleUtil.printRow(widths,
+                    p.getId(),
+                    truncate(p.getName(), 20),
+                    String.format("￥%.2f", p.getPrice()),
+                    p.getStatus().toString());
         }
         ConsoleUtil.printLine();
 
@@ -136,6 +140,7 @@ public class SellerMenu extends BaseMenu {
     }
 
     private void orderManagement() {
+        int[] widths = {10, 24, 14, 10, 14};
         while (true) {
             ConsoleUtil.printSubTitle("我收到的订单");
             List<Order> orders = orderService.listOrdersBySeller(currentUser.getId());
@@ -144,13 +149,19 @@ public class SellerMenu extends BaseMenu {
                 InputUtil.pause();
                 return;
             }
-            System.out.printf("  %-6s %-6s %-6s %-10s %-20s%n",
-                    "订单ID", "商品ID", "买家ID", "状态", "下单时间");
+            ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "状态", "下单时间");
             ConsoleUtil.printLine();
             for (Order o : orders) {
-                System.out.printf("  %-6s %-6s %-6s %-10s %-20s%n",
-                        o.getId(), o.getProductId(), o.getBuyerId(),
-                        o.getStatus(), o.getCreateTime().toLocalDate());
+                Product p = productService.getProductById(o.getProductId());
+                String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
+                User buyer = userService.getUserById(o.getBuyerId());
+                String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
+                ConsoleUtil.printRow(widths,
+                        o.getId(),
+                        pName,
+                        buyerName,
+                        o.getStatus().toString(),
+                        o.getCreateTime().toLocalDate().toString());
             }
             ConsoleUtil.printLine();
             printOptions("确认订单", "拒绝订单", "返回");

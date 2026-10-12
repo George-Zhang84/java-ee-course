@@ -103,11 +103,13 @@ public class AdminMenu extends BaseMenu {
 
     private void listUsers(List<User> users) {
         ConsoleUtil.printSubTitle("用户列表（共 " + users.size() + " 人）");
-        System.out.printf("  %-6s %-15s %-8s %-10s%n", "ID", "用户名", "角色", "状态");
+        int[] widths = {8, 18, 12, 12};
+        ConsoleUtil.printRow(widths, "ID", "用户名", "角色", "状态");
         ConsoleUtil.printLine();
         users.stream().limit(20).forEach(u ->
-                System.out.printf("  %-6s %-15s %-8s %-10s%n",
-                        u.getId(), u.getUsername(), u.getRole(), u.getStatus()));
+                ConsoleUtil.printRow(widths,
+                        u.getId(), u.getUsername(),
+                        u.getRole().toString(), u.getStatus().toString()));
         if (users.size() > 20) {
             System.out.println("  ...（仅显示前20条）");
         }
@@ -123,9 +125,17 @@ public class AdminMenu extends BaseMenu {
             InputUtil.pause();
             return;
         }
+        int[] widths = {8, 24, 12, 16};
+        ConsoleUtil.printRow(widths, "ID", "名称", "价格", "卖家");
+        ConsoleUtil.printLine();
         for (Product p : pendings) {
-            System.out.printf("  %-6s %-22s ￥%-8.2f 卖家:%s%n",
-                    p.getId(), p.getName(), p.getPrice(), p.getSellerId());
+            User seller = userService.getUserById(p.getSellerId());
+            String sellerName = (seller != null) ? seller.getUsername() : p.getSellerId();
+            ConsoleUtil.printRow(widths,
+                    p.getId(),
+                    truncate(p.getName(), 20),
+                    String.format("￥%.2f", p.getPrice()),
+                    sellerName);
         }
         ConsoleUtil.printLine();
         printOptions("审核通过", "驳回", "返回");
@@ -156,13 +166,19 @@ public class AdminMenu extends BaseMenu {
     // ================== 所有商品 ==================
     private void allProducts() {
         ConsoleUtil.printSubTitle("所有商品（共 " + store.getProductCount() + " 件）");
-        System.out.printf("  %-6s %-22s ￥%-8s %-8s %-6s%n",
-                "ID", "名称", "价格", "状态", "卖家");
+        int[] widths = {8, 24, 12, 12, 14};
+        ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态", "卖家");
         ConsoleUtil.printLine();
-        store.getAllProducts().stream().limit(30).forEach(p ->
-                System.out.printf("  %-6s %-22s ￥%-7.2f %-8s %-6s%n",
-                        p.getId(), truncate(p.getName(), 20), p.getPrice(),
-                        p.getStatus(), p.getSellerId()));
+        store.getAllProducts().stream().limit(30).forEach(p -> {
+            User seller = store.findUserById(p.getSellerId());
+            String sellerName = (seller != null) ? seller.getUsername() : p.getSellerId();
+            ConsoleUtil.printRow(widths,
+                    p.getId(),
+                    truncate(p.getName(), 20),
+                    String.format("￥%.2f", p.getPrice()),
+                    p.getStatus().toString(),
+                    sellerName);
+        });
         if (store.getProductCount() > 30) {
             System.out.println("  ...（仅显示前30条）");
         }
@@ -182,13 +198,20 @@ public class AdminMenu extends BaseMenu {
     // ================== 所有订单 ==================
     private void allOrders() {
         ConsoleUtil.printSubTitle("所有订单（共 " + store.getOrderCount() + " 单）");
-        System.out.printf("  %-6s %-6s %-6s %-6s %-10s%n",
-                "订单ID", "买家", "卖家", "商品", "状态");
+        int[] widths = {10, 24, 14, 14, 10};
+        ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "卖家", "状态");
         ConsoleUtil.printLine();
-        store.getAllOrders().stream().limit(30).forEach(o ->
-                System.out.printf("  %-6s %-6s %-6s %-6s %-10s%n",
-                        o.getId(), o.getBuyerId(), o.getSellerId(),
-                        o.getProductId(), o.getStatus()));
+        store.getAllOrders().stream().limit(30).forEach(o -> {
+            Product p = store.findProductById(o.getProductId());
+            User buyer = store.findUserById(o.getBuyerId());
+            User seller = store.findUserById(o.getSellerId());
+            String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
+            String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
+            String sellerName = (seller != null) ? seller.getUsername() : o.getSellerId();
+            ConsoleUtil.printRow(widths,
+                    o.getId(), pName, buyerName, sellerName,
+                    o.getStatus().toString());
+        });
         if (store.getOrderCount() > 30) {
             System.out.println("  ...（仅显示前30条）");
         }
