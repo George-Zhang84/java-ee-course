@@ -13,7 +13,9 @@ import com.zhj.exp1.service.UserService;
 import com.zhj.exp1.util.ConsoleUtil;
 import com.zhj.exp1.util.InputUtil;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 卖家菜单
@@ -77,36 +79,32 @@ public class SellerMenu extends BaseMenu {
         });
     }
 
+    /**
+     * 我的商品 - 分页展示 + 操作
+     */
     private void myProducts() {
-        ConsoleUtil.printSubTitle("我的商品");
         List<Product> products = productService.listProductsBySeller(currentUser.getId());
-        if (products.isEmpty()) {
-            ConsoleUtil.printWarning("你还没有发布任何商品");
-            InputUtil.pause();
-            return;
-        }
-
         int[] widths = {8, 24, 14, 12};
-        ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态");
-        ConsoleUtil.printLine();
-        for (Product p : products) {
-            ConsoleUtil.printRow(widths,
-                    p.getId(),
-                    truncate(p.getName(), 20),
-                    String.format("￥%.2f", p.getPrice()),
-                    p.getStatus().toString());
-        }
-        ConsoleUtil.printLine();
 
-        printOptions("编辑商品", "下架商品", "重新上架", "返回");
-        int choice = readChoice(1, 4);
-        switch (choice) {
-            case 1 -> editProduct();
-            case 2 -> offShelf();
-            case 3 -> reOnShelf();
-            case 4 -> {
-            }
-        }
+        Map<String, Runnable> extraActions = new HashMap<>();
+        extraActions.put("1", this::editProduct);
+        extraActions.put("2", this::offShelf);
+        extraActions.put("3", this::reOnShelf);
+
+        browsePaged(products, 5, "我的商品",
+                pageData -> {
+                    ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态");
+                    ConsoleUtil.printLine();
+                    for (Product p : pageData) {
+                        ConsoleUtil.printRow(widths,
+                                p.getId(),
+                                truncate(p.getName(), 20),
+                                String.format("￥%.2f", p.getPrice()),
+                                p.getStatus().toString());
+                    }
+                },
+                "[1]编辑 [2]下架 [3]重新上架",
+                extraActions);
     }
 
     private void editProduct() {
@@ -139,69 +137,59 @@ public class SellerMenu extends BaseMenu {
         });
     }
 
+    /**
+     * 订单管理 - 分页展示 + 操作
+     */
     private void orderManagement() {
+        List<Order> orders = orderService.listOrdersBySeller(currentUser.getId());
         int[] widths = {10, 24, 14, 10, 14};
-        while (true) {
-            ConsoleUtil.printSubTitle("我收到的订单");
-            List<Order> orders = orderService.listOrdersBySeller(currentUser.getId());
-            if (orders.isEmpty()) {
-                ConsoleUtil.printWarning("暂无订单");
-                InputUtil.pause();
-                return;
-            }
-            ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "状态", "下单时间");
-            ConsoleUtil.printLine();
-            for (Order o : orders) {
-                Product p = productService.getProductById(o.getProductId());
-                String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
-                User buyer = userService.getUserById(o.getBuyerId());
-                String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
-                ConsoleUtil.printRow(widths,
-                        o.getId(),
-                        pName,
-                        buyerName,
-                        o.getStatus().toString(),
-                        o.getCreateTime().toLocalDate().toString());
-            }
-            ConsoleUtil.printLine();
-            printOptions("确认订单", "拒绝订单", "返回");
 
-            int choice = readChoice(1, 3);
-            switch (choice) {
-                case 1 -> {
-                    String oid = InputUtil.readString("请输入订单ID：");
-                    safeExecute(() -> {
-                        orderService.confirmOrder(oid, currentUser.getId());
-                        ConsoleUtil.printSuccess("订单已确认，等待买家收货");
-                        InputUtil.pause();
-                    });
-                }
-                case 2 -> {
-                    String oid = InputUtil.readString("请输入订单ID：");
-                    safeExecute(() -> {
-                        orderService.rejectOrder(oid, currentUser.getId());
-                        ConsoleUtil.printSuccess("订单已拒绝，款项已退给买家");
-                        InputUtil.pause();
-                    });
-                }
-                case 3 -> {
-                    return;
-                }
-            }
-        }
+        Map<String, Runnable> extraActions = new HashMap<>();
+        extraActions.put("1", () -> {
+            String oid = InputUtil.readString("请输入订单ID：");
+            safeExecute(() -> {
+                orderService.confirmOrder(oid, currentUser.getId());
+                ConsoleUtil.printSuccess("订单已确认，等待买家收货");
+                InputUtil.pause();
+            });
+        });
+        extraActions.put("2", () -> {
+            String oid = InputUtil.readString("请输入订单ID：");
+            safeExecute(() -> {
+                orderService.rejectOrder(oid, currentUser.getId());
+                ConsoleUtil.printSuccess("订单已拒绝，款项已退给买家");
+                InputUtil.pause();
+            });
+        });
+
+        browsePaged(orders, 5, "我收到的订单",
+                pageData -> {
+                    ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "状态", "下单时间");
+                    ConsoleUtil.printLine();
+                    for (Order o : pageData) {
+                        Product p = productService.getProductById(o.getProductId());
+                        String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
+                        User buyer = userService.getUserById(o.getBuyerId());
+                        String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
+                        ConsoleUtil.printRow(widths,
+                                o.getId(),
+                                pName,
+                                buyerName,
+                                o.getStatus().toString(),
+                                o.getCreateTime().toLocalDate().toString());
+                    }
+                },
+                "[1]确认订单 [2]拒绝订单",
+                extraActions);
     }
 
+    /**
+     * 我收到的评价 - 分页展示
+     */
     private void myReviews() {
-        ConsoleUtil.printSubTitle("我收到的评价");
         List<Review> reviews = reviewService.listBySeller(currentUser.getId());
-        if (reviews.isEmpty()) {
-            ConsoleUtil.printWarning("暂无评价");
-        } else {
-            for (Review r : reviews) {
-                System.out.println("  " + r);
-            }
-        }
-        InputUtil.pause();
+        browsePaged(reviews, 10, "我收到的评价",
+                pageData -> pageData.forEach(r -> System.out.println("  " + r)));
     }
 
     private String truncate(String s, int len) {

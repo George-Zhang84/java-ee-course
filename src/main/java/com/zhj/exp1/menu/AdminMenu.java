@@ -101,19 +101,20 @@ public class AdminMenu extends BaseMenu {
         }
     }
 
+    /**
+     * 用户列表 - 分页显示
+     */
     private void listUsers(List<User> users) {
-        ConsoleUtil.printSubTitle("用户列表（共 " + users.size() + " 人）");
         int[] widths = {8, 18, 12, 12};
-        ConsoleUtil.printRow(widths, "ID", "用户名", "角色", "状态");
-        ConsoleUtil.printLine();
-        users.stream().limit(20).forEach(u ->
+        browsePaged(users, 20, "用户列表", pageData -> {
+            ConsoleUtil.printRow(widths, "ID", "用户名", "角色", "状态");
+            ConsoleUtil.printLine();
+            for (User u : pageData) {
                 ConsoleUtil.printRow(widths,
                         u.getId(), u.getUsername(),
-                        u.getRole().toString(), u.getStatus().toString()));
-        if (users.size() > 20) {
-            System.out.println("  ...（仅显示前20条）");
-        }
-        InputUtil.pause();
+                        u.getRole().toString(), u.getStatus().toString());
+            }
+        });
     }
 
     // ================== 商品审核 ==================
@@ -165,25 +166,26 @@ public class AdminMenu extends BaseMenu {
 
     // ================== 所有商品 ==================
     private void allProducts() {
-        ConsoleUtil.printSubTitle("所有商品（共 " + store.getProductCount() + " 件）");
         int[] widths = {8, 24, 12, 12, 14};
-        ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态", "卖家");
-        ConsoleUtil.printLine();
-        store.getAllProducts().stream().limit(30).forEach(p -> {
-            User seller = store.findUserById(p.getSellerId());
-            String sellerName = (seller != null) ? seller.getUsername() : p.getSellerId();
-            ConsoleUtil.printRow(widths,
-                    p.getId(),
-                    truncate(p.getName(), 20),
-                    String.format("￥%.2f", p.getPrice()),
-                    p.getStatus().toString(),
-                    sellerName);
-        });
-        if (store.getProductCount() > 30) {
-            System.out.println("  ...（仅显示前30条）");
-        }
-        ConsoleUtil.printLine();
+        List<Product> products = store.getAllProducts();
 
+        // 分页浏览
+        browsePaged(products, 15, "所有商品", pageData -> {
+            ConsoleUtil.printRow(widths, "ID", "名称", "价格", "状态", "卖家");
+            ConsoleUtil.printLine();
+            for (Product p : pageData) {
+                User seller = store.findUserById(p.getSellerId());
+                String sellerName = (seller != null) ? seller.getUsername() : p.getSellerId();
+                ConsoleUtil.printRow(widths,
+                        p.getId(),
+                        truncate(p.getName(), 20),
+                        String.format("￥%.2f", p.getPrice()),
+                        p.getStatus().toString(),
+                        sellerName);
+            }
+        });
+
+        // 翻页结束后，询问是否下架
         String op = InputUtil.readString("是否下架某商品？(y/n)：").toLowerCase();
         if (op.equals("y")) {
             String pid = InputUtil.readString("商品ID：");
@@ -197,40 +199,44 @@ public class AdminMenu extends BaseMenu {
 
     // ================== 所有订单 ==================
     private void allOrders() {
-        ConsoleUtil.printSubTitle("所有订单（共 " + store.getOrderCount() + " 单）");
         int[] widths = {10, 24, 14, 14, 10};
-        ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "卖家", "状态");
-        ConsoleUtil.printLine();
-        store.getAllOrders().stream().limit(30).forEach(o -> {
-            Product p = store.findProductById(o.getProductId());
-            User buyer = store.findUserById(o.getBuyerId());
-            User seller = store.findUserById(o.getSellerId());
-            String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
-            String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
-            String sellerName = (seller != null) ? seller.getUsername() : o.getSellerId();
-            ConsoleUtil.printRow(widths,
-                    o.getId(), pName, buyerName, sellerName,
-                    o.getStatus().toString());
+        List<com.zhj.exp1.model.Order> orders = store.getAllOrders();
+
+        browsePaged(orders, 15, "所有订单", pageData -> {
+            ConsoleUtil.printRow(widths, "订单ID", "商品名称", "买家", "卖家", "状态");
+            ConsoleUtil.printLine();
+            for (com.zhj.exp1.model.Order o : pageData) {
+                Product p = store.findProductById(o.getProductId());
+                User buyer = store.findUserById(o.getBuyerId());
+                User seller = store.findUserById(o.getSellerId());
+                String pName = (p != null) ? truncate(p.getName(), 20) : o.getProductId();
+                String buyerName = (buyer != null) ? buyer.getUsername() : o.getBuyerId();
+                String sellerName = (seller != null) ? seller.getUsername() : o.getSellerId();
+                ConsoleUtil.printRow(widths,
+                        o.getId(), pName, buyerName, sellerName,
+                        o.getStatus().toString());
+            }
         });
-        if (store.getOrderCount() > 30) {
-            System.out.println("  ...（仅显示前30条）");
-        }
-        InputUtil.pause();
     }
 
     // ================== 评价管理 ==================
     private void reviewManagement() {
-        ConsoleUtil.printSubTitle("所有评价（共 " + store.getReviewCount() + " 条）");
         List<Review> reviews = reviewService.listAll();
-        if (reviews.isEmpty()) {
-            ConsoleUtil.printWarning("暂无评价");
-            InputUtil.pause();
-            return;
-        }
-        reviews.stream().limit(20).forEach(r -> System.out.println("  " + r));
-        if (reviews.size() > 20) System.out.println("  ...（仅显示前20条）");
-        ConsoleUtil.printLine();
+        int[] widths = {12, 18, 8, 30, 14};
 
+        browsePaged(reviews, 15, "所有评价", pageData -> {
+            ConsoleUtil.printRow(widths, "评价ID", "商品ID", "评分", "内容", "评价时间");
+            ConsoleUtil.printLine();
+            for (Review r : pageData) {
+                ConsoleUtil.printRow(widths,
+                        r.getId(), r.getOrderId(),
+                        r.getRating() + "星",
+                        truncate(r.getContent(), 28),
+                        r.getCreateTime().toLocalDate().toString());
+            }
+        });
+
+        // 翻页结束后，询问是否删除
         String op = InputUtil.readString("是否删除某评价？(y/n)：").toLowerCase();
         if (op.equals("y")) {
             String rid = InputUtil.readString("评价ID：");
