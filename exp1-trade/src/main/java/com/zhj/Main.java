@@ -1,7 +1,7 @@
 package com.zhj;
 
-import com.zhj.exp1.menu.MainMenu;
-import com.zhj.exp1.repository.DataInitializer;
+import com.zhj.menu.MainMenu;
+import com.zhj.repository.DataInitializer;
 
 public class Main {
     public static void main(String[] args) {
