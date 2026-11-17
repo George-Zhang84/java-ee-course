@@ -162,6 +162,8 @@ api.get(`/user?action=list&keyword=&roleCode=`)
 5. **登录无限流/验证码**：可被暴力破解，建议按 IP/账号限流。
 6. **前端依赖 CDN**：离线环境无法加载 Vue/Element Plus，答辩前建议把静态资源下载到 `webapp/static` 本地引用。
 7. **Cookie 未设置 Secure**：本地 HTTP 演示无法设置，上线 HTTPS 后应开启。
+8. **金额使用 `double`**：当前金额计算用 `double` + 数据库 `decimal(10,2)`，课程金额范围内没问题；正式系统建议改用 `BigDecimal` 并在数据库层统一舍入规则。
+9. **`product.views` 字段未使用**：可以补一个「查看详情时浏览量 +1」的功能，不属于本次 Bug 修复范围。
 
 ---
 
