@@ -31,3 +31,7 @@ dist/
 
 # 报告/源码压缩包不进仓库
 *.zip
+
+# 报告与报告配图只本地保存，不入库
+exp4-springboot/docs/report/
+exp4-springboot/docs/figures/
