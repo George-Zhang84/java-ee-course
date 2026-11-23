@@ -28,3 +28,6 @@ dist/
 *.local
 .DS_Store
 
+
+# 报告/源码压缩包不进仓库
+*.zip
