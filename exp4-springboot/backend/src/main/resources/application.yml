@@ -1,0 +1,83 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: exp4-springboot
+  profiles:
+    active: dev
+  # 本项目自行用 JWT 认证，不需要 Spring Boot 生成的内存用户与随机密码
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  servlet:
+    multipart:
+      # 商品图片上传限制：单文件 5MB，单次请求 20MB
+      max-file-size: 5MB
+      max-request-size: 20MB
+  jackson:
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL，生产环境改用 logging.level 控制
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      # 逻辑删除：sys_user / product 等表用 deleted 字段
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 业务自定义配置（绑定到 com.zhj.exp4.config.AppProperties）
+exp4:
+  jwt:
+    # 生产必须通过环境变量覆盖，长度 >= 32 字节
+    secret: ${JWT_SECRET:exp4-campus-trade-jwt-secret-key-please-change-in-production}
+    expire-seconds: ${JWT_EXPIRE:7200}
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}
+    url-prefix: /uploads
+    max-size-mb: 5
+  order:
+    # 订单未支付超时分钟数（定时任务扫描依据）
+    timeout-minutes: ${ORDER_TIMEOUT_MINUTES:15}
+    # 超时订单扫描间隔（毫秒），演示时可调小
+    timeout-scan-ms: ${ORDER_SCAN_MS:60000}
+  offer:
+    # 议价报价单有效期（小时）与单买家最大出价次数
+    expire-hours: 24
+    max-attempts: 3
+    # 过期报价单扫描间隔（毫秒）
+    expire-scan-ms: ${OFFER_SCAN_MS:60000}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: info
+    com.zhj.exp4: debug

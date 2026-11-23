@@ -1,0 +1,100 @@
+/* 全局样式：统一色板与基础排版，避免各页面重复写 */
+:root {
+  --brand: #2f6bff;
+  --brand-light: #eaf1ff;
+  --text-main: #1f2329;
+  --text-sub: #6b7280;
+  --bg-page: #f5f7fb;
+  --card-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-main);
+  background: var(--bg-page);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  /* 用 flex-start：左侧伪元素是色条，标题紧随其后；
+     需要右对齐的“查看全部”链接请自行加 margin-left:auto */
+  justify-content: flex-start;
+  margin: 8px 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.section-title > .more {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  margin-right: 8px;
+  background: var(--brand);
+  border-radius: 2px;
+}
+
+.text-sub {
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.price {
+  color: #ff5c00;
+  font-weight: 700;
+}
+
+.price::before {
+  content: '¥';
+  font-size: 0.75em;
+  margin-right: 2px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.empty-block {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-sub);
+}
+
+/* 图片统一处理：固定比例，避免不同尺寸图片撑破卡片 */
+.cover-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #eef1f6;
+  display: block;
+}

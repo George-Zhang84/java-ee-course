@@ -1,0 +1,17 @@
+# 开发环境：连接本机 Docker MySQL（mysql-rbac 容器）
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # connectionTimeZone + forceConnectionTimeZoneToSession：让 MySQL 会话时区与 Java 一致为 Asia/Shanghai，
+    # 否则 CURRENT_TIMESTAMP 会按容器 UTC 写入，出现"操作日志 21:33 / 登录日志 13:12"的 8 小时偏差
+    url: jdbc:mysql://localhost:3306/exp4_trade?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+logging:
+  level:
+    com.zhj.exp4.mapper: debug

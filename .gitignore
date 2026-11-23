@@ -16,3 +16,15 @@ target/
 # ====== 系统生成 ======
 .DS_Store
 Thumbs.db
+# ====== 实验四：后端运行产物 ======
+uploads/
+logs/
+*.log
+
+# ====== 实验四：前端 ======
+node_modules/
+dist/
+.vite/
+*.local
+.DS_Store
+
